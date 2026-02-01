@@ -1,0 +1,42 @@
+{
+  "name": "mahoraga-plugins",
+  "owner": {
+    "name": "Crypto-star",
+    "email": "crypto-star@users.noreply.github.com"
+  },
+  "metadata": {
+    "description": "Adaptive autonomous agent plugins for Claude Code that learn from failures and never repeat mistakes",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "mahoraga",
+      "source": "./",
+      "description": "Adaptive autonomous agent that learns from failures and never repeats mistakes. Features failure immunity with time-decay, wheel-based strategy adaptation, and multi-factor completion validation.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Crypto-star"
+      },
+      "homepage": "https://github.com/Crypto-star/mahoraga#readme",
+      "repository": "https://github.com/Crypto-star/mahoraga",
+      "license": "MIT",
+      "keywords": [
+        "automation",
+        "adaptive",
+        "iteration",
+        "learning",
+        "agent",
+        "autonomous",
+        "failure-immunity",
+        "persistence"
+      ],
+      "category": "productivity",
+      "tags": [
+        "autonomous-agent",
+        "error-handling",
+        "adaptive-learning",
+        "task-automation"
+      ]
+    }
+  ]
+}

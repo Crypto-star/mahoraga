@@ -3,7 +3,8 @@
   "description": "Adaptive autonomous agent that learns from failures and never repeats mistakes. Combines persistence with failure immunity, rotation-based strategy adaptation, and multi-factor validation.",
   "version": "1.0.0",
   "author": {
-    "name": "Crypto-star"
+    "name": "Crypto-star",
+    "url": "https://github.com/Crypto-star"
   },
   "repository": "https://github.com/Crypto-star/mahoraga",
   "homepage": "https://github.com/Crypto-star/mahoraga#readme",
@@ -16,7 +17,10 @@
     "agent",
     "autonomous",
     "failure-immunity",
-    "claude-code"
+    "claude-code",
+    "persistence",
+    "error-handling"
   ],
+  "commands": "./commands/",
   "hooks": "./hooks/hooks.json"
 }
