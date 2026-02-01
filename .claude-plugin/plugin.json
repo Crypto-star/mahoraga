@@ -21,6 +21,5 @@
     "persistence",
     "error-handling"
   ],
-  "commands": "./commands/",
-  "hooks": "./hooks/hooks.json"
+  "commands": "./commands/"
 }
