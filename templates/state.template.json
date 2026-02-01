@@ -1,0 +1,12 @@
+{
+  "active": false,
+  "task": "",
+  "iteration": 0,
+  "rotation_count": 0,
+  "max_rotations": 10,
+  "no_immunity": false,
+  "session_only": false,
+  "started_at": "",
+  "last_rotation_at": "",
+  "session_id": ""
+}
