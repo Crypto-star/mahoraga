@@ -2,35 +2,55 @@
   "hooks": {
     "UserPromptSubmit": [
       {
-        "type": "command",
-        "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/init-handler.sh"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/init-handler.sh"
+          }
+        ]
       }
     ],
     "PreToolUse": [
       {
         "matcher": "Bash|Write|Edit|WebFetch|WebSearch",
-        "type": "command",
-        "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/pre-tool-handler.sh"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/pre-tool-handler.sh"
+          }
+        ]
       }
     ],
     "PostToolUse": [
       {
         "matcher": "Bash|Write|Edit",
-        "type": "command",
-        "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/post-success-handler.sh"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/post-success-handler.sh"
+          }
+        ]
       }
     ],
     "PostToolUseFailure": [
       {
         "matcher": "",
-        "type": "command",
-        "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/post-tool-handler.sh"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/post-tool-handler.sh"
+          }
+        ]
       }
     ],
     "Stop": [
       {
-        "type": "command",
-        "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/stop-handler.sh"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/stop-handler.sh"
+          }
+        ]
       }
     ]
   }
