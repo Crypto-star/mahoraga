@@ -10,24 +10,27 @@ source "${SCRIPT_DIR}/lib/logger.sh"
 source "${SCRIPT_DIR}/lib/state.sh"
 source "${SCRIPT_DIR}/lib/immunity.sh"
 
-# Find jq (required)
-if ! command -v jq &>/dev/null; then
-    # Try common paths
+# Find jq binary
+JQ_BIN=""
+if command -v jq &>/dev/null; then
+    JQ_BIN="jq"
+else
     for p in /usr/bin/jq /usr/local/bin/jq /snap/bin/jq; do
-        [ -x "$p" ] && alias jq="$p" && break
+        [ -x "$p" ] && JQ_BIN="$p" && break
     done
 fi
+[ -z "$JQ_BIN" ] && exit 0
 
 # Read stdin
 INPUT=$(cat 2>/dev/null)
 [ -z "$INPUT" ] && exit 0
 
 # Parse fields
-CWD=$(echo "$INPUT" | jq -r '.cwd // "."' 2>/dev/null)
+CWD=$(echo "$INPUT" | "$JQ_BIN" -r '.cwd // "."' 2>/dev/null)
 [ -z "$CWD" ] && CWD="."
 
-TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // ""' 2>/dev/null)
-TOOL_INPUT=$(echo "$INPUT" | jq -c '.tool_input // {}' 2>/dev/null)
+TOOL_NAME=$(echo "$INPUT" | "$JQ_BIN" -r '.tool_name // ""' 2>/dev/null)
+TOOL_INPUT=$(echo "$INPUT" | "$JQ_BIN" -c '.tool_input // {}' 2>/dev/null)
 
 # Check if Mahoraga is active
 MAHORAGA_DIR="${CWD}/.mahoraga"

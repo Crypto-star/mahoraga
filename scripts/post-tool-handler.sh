@@ -11,25 +11,29 @@ source "${SCRIPT_DIR}/lib/state.sh"
 source "${SCRIPT_DIR}/lib/immunity.sh"
 source "${SCRIPT_DIR}/lib/wheel.sh"
 
-# Find jq (required)
-if ! command -v jq &>/dev/null; then
+# Find jq binary
+JQ_BIN=""
+if command -v jq &>/dev/null; then
+    JQ_BIN="jq"
+else
     for p in /usr/bin/jq /usr/local/bin/jq /snap/bin/jq; do
-        [ -x "$p" ] && alias jq="$p" && break
+        [ -x "$p" ] && JQ_BIN="$p" && break
     done
 fi
+[ -z "$JQ_BIN" ] && exit 0
 
 # Read stdin
 INPUT=$(cat 2>/dev/null)
 [ -z "$INPUT" ] && exit 0
 
 # Parse fields
-CWD=$(echo "$INPUT" | jq -r '.cwd // "."' 2>/dev/null)
+CWD=$(echo "$INPUT" | "$JQ_BIN" -r '.cwd // "."' 2>/dev/null)
 [ -z "$CWD" ] && CWD="."
 
-TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // ""' 2>/dev/null)
-TOOL_INPUT=$(echo "$INPUT" | jq -c '.tool_input // {}' 2>/dev/null)
-ERROR_MSG=$(echo "$INPUT" | jq -r '.error // ""' 2>/dev/null)
-IS_INTERRUPT=$(echo "$INPUT" | jq -r '.is_interrupt // false' 2>/dev/null)
+TOOL_NAME=$(echo "$INPUT" | "$JQ_BIN" -r '.tool_name // ""' 2>/dev/null)
+TOOL_INPUT=$(echo "$INPUT" | "$JQ_BIN" -c '.tool_input // {}' 2>/dev/null)
+ERROR_MSG=$(echo "$INPUT" | "$JQ_BIN" -r '.error // ""' 2>/dev/null)
+IS_INTERRUPT=$(echo "$INPUT" | "$JQ_BIN" -r '.is_interrupt // false' 2>/dev/null)
 
 # Skip user interrupts
 [ "$IS_INTERRUPT" = "true" ] && exit 0
@@ -57,6 +61,9 @@ ERROR_TYPE=$(categorize_error "$ERROR_MSG")
 
 # Log the failure
 log_failure "$TOOL_NAME" "$ERROR_MSG"
+
+# Write to recent_output.log for validator to check
+echo "[$(get_timestamp)] ERROR: $TOOL_NAME failed - $ERROR_MSG" >> "${MAHORAGA_DIR}/recent_output.log"
 
 # Add to immunity database (unless in no-immunity mode)
 if [ "$(is_immunity_disabled)" != "true" ]; then
