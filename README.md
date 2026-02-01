@@ -22,9 +22,24 @@ Like the mythical Mahoraga that adapts to any attack and becomes immune to it, t
 
   # macOS
   brew install jq
+
+  # Windows (with Chocolatey)
+  choco install jq
   ```
 
-### Install Plugin
+### Method 1: Install from Marketplace (Recommended)
+
+The easiest way to install Mahoraga:
+
+```
+# Add the Mahoraga marketplace
+/plugin marketplace add Crypto-star/mahoraga
+
+# Install the plugin
+/plugin install mahoraga@mahoraga-plugins
+```
+
+### Method 2: Manual Installation
 
 ```bash
 # Clone the repository
@@ -38,6 +53,14 @@ Or add to your Claude plugins directory:
 ```bash
 git clone https://github.com/Crypto-star/mahoraga.git ~/.claude/plugins/mahoraga
 ```
+
+### Verify Installation
+
+After installation, verify the plugin is loaded:
+```
+/plugin
+```
+You should see `mahoraga` in your installed plugins list.
 
 ## Usage
 
@@ -106,9 +129,10 @@ All state is stored in `.mahoraga/` directory:
 | File | Purpose |
 |------|---------|
 | `state.json` | Session state (active, task, rotations) |
-| `immunity.json` | Failed approaches database |
-| `wheel.json` | Adaptation tracking |
-| `history.log` | Complete execution log |
+| `immunity.json` | Failed approaches database with time-decay |
+| `wheel.json` | Adaptation tracking and strategy state |
+| `history.log` | Complete execution log with timestamps |
+| `recent_output.log` | Recent errors for validation checks |
 
 ### Immunity System
 
@@ -117,6 +141,11 @@ When a command fails:
 2. Added to `immunity.json` with signature and error type
 3. Future identical commands are **BLOCKED**
 4. Claude must try a different approach
+
+**Smart Features:**
+- **Time-decay**: Immunity expires after 10 minutes, allowing retries
+- **Context awareness**: If files are modified, retries are allowed
+- **Similar command matching**: Blocks variations of failed commands (e.g., `pip install X` variations)
 
 **Error Categories:** `dependency`, `permission`, `network`, `file_not_found`, `syntax`, `memory`, `auth`, `rate_limit`, `unknown`
 
@@ -161,19 +190,29 @@ Immunity: 2 patterns blocked
 ```
 mahoraga/
 ├── .claude-plugin/
-│   └── plugin.json           # Plugin manifest
+│   ├── plugin.json           # Plugin manifest
+│   └── marketplace.json      # Marketplace distribution config
 ├── commands/
 │   ├── mahoraga.md           # Main /mahoraga command
 │   └── mahoraga-status.md    # Status command
 ├── hooks/
 │   └── hooks.json            # Hook configuration
 ├── scripts/
+│   ├── lib/                  # Library modules
+│   │   ├── common.sh         # Platform detection, utilities
+│   │   ├── immunity.sh       # Immunity database operations
+│   │   ├── wheel.sh          # Wheel rotation logic
+│   │   ├── validator.sh      # Multi-factor validation
+│   │   ├── state.sh          # State management
+│   │   └── logger.sh         # Structured logging
 │   ├── init-handler.sh       # Session initialization
 │   ├── pre-tool-handler.sh   # Immunity checking
 │   ├── post-tool-handler.sh  # Failure logging
 │   ├── post-success-handler.sh # Success logging
 │   └── stop-handler.sh       # Completion validation
 ├── templates/                # State file templates
+├── CHANGELOG.md              # Version history
+├── LICENSE                   # MIT License
 └── README.md
 ```
 
@@ -192,6 +231,26 @@ rm -rf .mahoraga/
 ### Plugin not loading
 ```bash
 claude --plugin-dir ./mahoraga --debug
+```
+
+## Updating
+
+```
+# From Marketplace
+/plugin update mahoraga@mahoraga-plugins
+
+# Manual Update
+cd ~/.claude/plugins/mahoraga && git pull origin main
+```
+
+## Uninstalling
+
+```
+# From Marketplace
+/plugin uninstall mahoraga@mahoraga-plugins
+
+# Manual Uninstall
+rm -rf ~/.claude/plugins/mahoraga
 ```
 
 ## Contributing
