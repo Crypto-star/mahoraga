@@ -1,22 +1,31 @@
 #!/usr/bin/env bash
 # init-handler.sh - UserPromptSubmit hook handler for Mahoraga
+# Initializes session state when /mahoraga command is detected
 
-# Find jq
-JQ_CMD=""
-for p in /usr/bin/jq /usr/local/bin/jq; do
-    [ -x "$p" ] && JQ_CMD="$p" && break
-done
-[ -z "$JQ_CMD" ] && exit 0
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Source library files
+source "${SCRIPT_DIR}/lib/common.sh"
+source "${SCRIPT_DIR}/lib/logger.sh"
+
+# Find jq (required)
+if ! command -v jq &>/dev/null; then
+    for p in /usr/bin/jq /usr/local/bin/jq /snap/bin/jq; do
+        [ -x "$p" ] && alias jq="$p" && break
+    done
+fi
+
+command -v jq &>/dev/null || exit 0
 
 # Read stdin
 INPUT=$(cat 2>/dev/null)
 [ -z "$INPUT" ] && exit 0
 
 # Parse fields
-CWD=$(echo "$INPUT" | "$JQ_CMD" -r '.cwd // "."' 2>/dev/null)
+CWD=$(echo "$INPUT" | jq -r '.cwd // "."' 2>/dev/null)
 [ -z "$CWD" ] && CWD="."
 
-PROMPT=$(echo "$INPUT" | "$JQ_CMD" -r '.prompt // ""' 2>/dev/null)
+PROMPT=$(echo "$INPUT" | jq -r '.prompt // ""' 2>/dev/null)
 [ -z "$PROMPT" ] && exit 0
 
 # Check if mahoraga command (but not status command)
@@ -37,20 +46,20 @@ fi
 # No task = skip initialization
 [ -z "$TASK" ] && exit 0
 
-# Sanitize task - remove newlines and control characters, escape for JSON
+# Sanitize task - remove newlines and control characters
 TASK=$(echo "$TASK" | tr '\n\r' '  ' | tr -d '\000-\037')
 
 # Setup directory
-MAHORAGA_DIR="${CWD}/.mahoraga"
-mkdir -p "$MAHORAGA_DIR" 2>/dev/null || exit 0
+MAHORAGA_DIR=$(get_mahoraga_dir "$CWD" "false")
+ensure_dir "$MAHORAGA_DIR"
 
-# Timestamp and session ID
-TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || echo "unknown")
-SID=$(date +%s 2>/dev/null || echo "0")
+# Initialize logger
+init_logger "$MAHORAGA_DIR"
 
 # Parse options from prompt
 MAX_ROT=10
 NO_IMM=false
+SESSION_ONLY=false
 
 case "$PROMPT" in
     *"--max-rotations"*)
@@ -63,13 +72,22 @@ case "$PROMPT" in
     *"--no-immunity"*) NO_IMM=true ;;
 esac
 
-# Create state.json using jq for proper escaping
-echo "{}" | "$JQ_CMD" \
+case "$PROMPT" in
+    *"--session-only"*) SESSION_ONLY=true ;;
+esac
+
+# Timestamp and session ID
+TS=$(get_timestamp)
+SID=$(get_unix_timestamp)
+
+# Create state.json
+echo "{}" | jq \
     --arg task "$TASK" \
     --arg ts "$TS" \
     --arg sid "$SID" \
     --argjson max_rot "$MAX_ROT" \
     --argjson no_imm "$NO_IMM" \
+    --argjson session_only "$SESSION_ONLY" \
     '{
         active: true,
         task: $task,
@@ -77,8 +95,9 @@ echo "{}" | "$JQ_CMD" \
         rotation_count: 0,
         max_rotations: $max_rot,
         no_immunity: $no_imm,
-        session_only: false,
+        session_only: $session_only,
         started_at: $ts,
+        last_rotation_at: $ts,
         session_id: $sid
     }' > "${MAHORAGA_DIR}/state.json"
 
@@ -86,10 +105,9 @@ echo "{}" | "$JQ_CMD" \
 echo '{"forbidden_patterns":[],"pattern_categories":{}}' > "${MAHORAGA_DIR}/immunity.json"
 
 # Create wheel.json
-echo '{"rotation_count":0,"current_strategy":"initial","adaptations":[]}' > "${MAHORAGA_DIR}/wheel.json"
+echo '{"rotation_count":0,"current_strategy":"initial","last_strategy":null,"refactoring_triggered":false,"adaptations":[]}' > "${MAHORAGA_DIR}/wheel.json"
 
-# Create history.log - also sanitize task for logging
-TASK_LOG=$(echo "$TASK" | head -c 100)
-echo "[$TS] Session started: $TASK_LOG" > "${MAHORAGA_DIR}/history.log"
+# Log session start
+log_init "$TASK" "$MAX_ROT"
 
 exit 0
