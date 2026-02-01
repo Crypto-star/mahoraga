@@ -105,17 +105,26 @@ fi
 # Validation failed - block completion
 log_validation "fail" "Blocking completion - validation failed"
 
-# Get immunity count and recent failures for context
-IMM_COUNT=$(immunity_count)
-DOMINANT_CAT=$(get_dominant_category)
-
-# Parse validation details
+# Parse validation details for better error message
+MANDATORY_PASSED=$(echo "$VALIDATION_RESULT" | "$JQ_BIN" -r '.mandatory.passed // 0' 2>/dev/null)
+MANDATORY_REQUIRED=$(echo "$VALIDATION_RESULT" | "$JQ_BIN" -r '.mandatory.required // 1' 2>/dev/null)
+BONUS_SCORE=$(echo "$VALIDATION_RESULT" | "$JQ_BIN" -r '.bonus.score // 0' 2>/dev/null)
+BONUS_REQUIRED=$(echo "$VALIDATION_RESULT" | "$JQ_BIN" -r '.bonus.required // 1' 2>/dev/null)
 DETAILS=$(echo "$VALIDATION_RESULT" | "$JQ_BIN" -r '.details // ""' 2>/dev/null)
+
+# Determine actual failure reason
+if [ "$MANDATORY_PASSED" -lt "$MANDATORY_REQUIRED" ]; then
+    FAILURE_REASON="Recent errors detected in output"
+elif [ "$BONUS_SCORE" -lt "$BONUS_REQUIRED" ]; then
+    FAILURE_REASON="Bonus validation score too low ($BONUS_SCORE/$BONUS_REQUIRED required)"
+else
+    FAILURE_REASON="Validation checks incomplete"
+fi
 
 cat << EOF
 {
   "decision": "block",
-  "reason": "🛞 Mahoraga: Validation incomplete\n\nRotation: $ROTATION/$MAX_ROT\nImmunity patterns: $IMM_COUNT\nPrimary issue type: $DOMINANT_CAT\n\nResolve recent failures before completing. The task appears to have unresolved issues."
+  "reason": "🛞 Mahoraga: Validation incomplete\n\nRotation: $ROTATION/$MAX_ROT\nMandatory: $MANDATORY_PASSED/$MANDATORY_REQUIRED\nBonus: $BONUS_SCORE (need $BONUS_REQUIRED)\n\nReason: $FAILURE_REASON\nDetails: $DETAILS"
 }
 EOF
 
